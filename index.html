@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://gstatic.com" crossorigin>
     <link href="https://googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://jsdelivr.net"></script>
-
     <style>
         :root {
             --neon-gold: #ffb703; --neon-cyan: #00f5d4; --neon-pink: #ff0054;
@@ -75,11 +74,11 @@
             <div class="schedule-grid" id="scheduleList"></div>
         </div>
     </div>
-    
     <script>
         const SUPABASE_URL = "https://supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_fA5Q5BxGFQ8P_-A1s2n65w_SvWFr9zc";
 
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const SCHEDULE = [
             { time: "11:00", name: "Morning Dev" }, { time: "13:30", name: "Noon Dev" },
             { time: "15:30", name: "Afternoon Dev" }, { time: "18:00", name: "Evening Dev" },
@@ -91,7 +90,6 @@
         const scheduleList = document.getElementById('scheduleList');
         let currentRotation = 0, isSpinning = false, activeSessionName = "";
 
-        // Independent Local Setup Engine
         function initWheel() {
             for (let i = 1; i <= 100; i++) {
                 const numDiv = document.createElement('div');
@@ -105,7 +103,6 @@
                 badge.setAttribute('data-time', item.time); scheduleList.appendChild(badge);
             });
         }
-
         function getNextTargetTime() {
             const now = new Date();
             for (let item of SCHEDULE) {
@@ -117,7 +114,6 @@
             const target = new Date(); target.setDate(target.getDate() + 1); target.setHours(hrs, mins, 0, 0);
             return { target, item: SCHEDULE[0] };
         }
-
         function updateClock() {
             if (isSpinning) return;
             const now = new Date(); const { target, item } = getNextTargetTime(); const diff = target - now;
@@ -130,15 +126,9 @@
             const secs = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
             timerDisplay.innerText = `${hrs}:${mins}:${secs}`;
         }
-
-        // Direct Fetch Integration Engine (Bypasses external imports natively)
-        async function runDirectFetch(apiEndpoint, options = {}) {
-            const headers = { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json", ...options.headers };
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/${apiEndpoint}`, { ...options, headers });
-            return response.json();
-        }
-
         async function placeWager() {
             const pId = document.getElementById('playerPhone').value.trim();
             const num = parseInt(document.getElementById('chosenNum').value);
             const amt = parseFloat(document.getElementById('betAmount').value);
+            if(!pId || isNaN(num) || isNaN(amt) || num < 1 || num > 100 || amt <= 0) { alert("Cross-check your fields."); return; }
+            const { error } = await supabase.from('bets').insert([{ player_id: pId, session_name: activeSessionName, chosen_number: num, amount: amt, status: 'pending' }]);
